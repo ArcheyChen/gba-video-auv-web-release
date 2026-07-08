@@ -1,0 +1,42 @@
+{
+  "version": "v0.1.0",
+  "date": "2026-07-09",
+  "changelog": [
+    "第一版发布"
+  ],
+  "siteUrl": "https://gbauv.ausar.xyz/",
+  "backupUrl": "https://archeychen.github.io/gba-video-auv-web-release/",
+  "sourceHash": "6fe4eecf8406",
+  "notice": {
+    "summary": "免费提供，禁止商用；转载、镜像或二次分发须注明 Ausar / ArcheyChen 和原始页面；按原样提供，不作功能或适配保证。",
+    "author": "Ausar / ArcheyChen"
+  },
+  "thirdParty": [
+    {
+      "name": "Fusion Pixel Font",
+      "url": "https://github.com/TakWolf/fusion-pixel-font"
+    },
+    {
+      "name": "Mediabunny",
+      "url": "https://github.com/Vanilagy/mediabunny",
+      "license": "MPL-2.0"
+    }
+  ],
+  "downloads": [
+    {
+      "name": "SuperCard SD",
+      "path": "downloads/auv-player-v0.1.0-scsd.gba",
+      "sha256": "4027ce86710d856378a6623e8f51565b058099c69ee6b56123fd8439e5ba7d98"
+    },
+    {
+      "name": "SuperChis",
+      "path": "downloads/auv-player-v0.1.0-superchis.gba",
+      "sha256": "86058160a791ee58e73717cd85a33276d3f8f099d69ce38e531d5f1b588a4f74"
+    },
+    {
+      "name": "EZODE",
+      "path": "downloads/auv-player-v0.1.0-ezode.gba",
+      "sha256": "c199876a7023583d09f7962a56bcf21549cd16e18a6d6a03aad04e5a513de210"
+    }
+  ]
+}

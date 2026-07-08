@@ -1,0 +1,422 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GBA AUV Web Transcoder - Retro Edition</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="shell">
+      <header class="app-header">
+        <div class="logo-area">
+          <span class="badge">GBA 视频转码工具</span>
+          <h1><span class="title-brand">AUV</span>: <span class="highlight-letter">Au</span>sar's GBA <span class="highlight-letter">V</span>ideo 播放器</h1>
+          <p>把本地视频转码为 GBA 播放器所用的 .auv 文件格式</p>
+        </div>
+        <div class="header-status">
+          <span class="connection-status" id="system-status">● SYSTEM LOADING</span>
+        </div>
+      </header>
+
+      <div class="app-layout">
+        <!-- LEFT: GBA Retro Console Sidebar (Sticky) -->
+        <section class="gba-sidebar">
+
+          <!-- Consolidated GBA + Cartridge Assembly -->
+          <div class="gba-assembly">
+
+            <!-- Cartridge Slot sitting directly on top of the GBA Handheld -->
+            <div class="cartridge-bay" id="drop-zone" title="拖入或选择视频卡带">
+              <input id="video-file" type="file" accept="video/*,.mkv,.mp4,.webm,.mov" />
+
+              <!-- Empty slot opening -->
+              <div class="slot-opening" id="slot-empty">
+                <span class="slot-arrow">▼</span>
+                <span class="slot-label-text">拖入或选择视频文件</span>
+              </div>
+
+              <!-- Inserted GBA Cartridge sticking out of the console -->
+              <div class="inserted-cartridge" id="gba-cartridge">
+                <div class="cartridge-ridge"></div>
+                <div class="cartridge-label">
+                  <div class="cartridge-label-header">
+                    <span>GBA VIDEO</span>
+                    <span>CARTRIDGE</span>
+                  </div>
+                  <div class="cartridge-label-title" id="sticker-file-name">未选择视频</div>
+                  <div class="cartridge-label-size" id="sticker-file-size">0.00 MiB</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- GBA Handheld Console Body -->
+            <div class="gba-handheld">
+              <div class="shoulder-buttons">
+                <div class="shoulder-btn left-trigger">L</div>
+                <div class="shoulder-btn right-trigger">R</div>
+              </div>
+
+              <!-- Bezel around the GBA Screen -->
+              <div class="screen-bezel">
+                <div class="screen-header">
+                  <div class="power-led" id="power-led"></div>
+                </div>
+
+                <!-- Simulated LCD Screen -->
+                <div class="screen-lcd">
+                  <div class="screen-glare"></div>
+
+                  <!-- Boot Animation Screen -->
+                  <div class="boot-screen" id="boot-screen">
+                    <div class="logo-nintendo">GBA</div>
+                    <div class="logo-gameboy">GAME BOY</div>
+                    <div class="logo-subtext">VIDEO TRANSCODER</div>
+                  </div>
+
+                  <!-- Active Screen Content -->
+                  <div class="screen-content">
+                    <div class="monitor-header">
+                      <span class="mon-title">状态监视器</span>
+                      <span class="mon-fps" id="live-fps">00.00 FPS</span>
+                    </div>
+
+                    <div class="preview-area">
+                      <canvas id="preview" width="80" height="60" style="display: none;"></canvas>
+
+                      <!-- Retro Button Mapping Info Overlay when idle -->
+                      <div class="screen-help-overlay" id="screen-help-overlay">
+                        <div class="help-title">🎮 掌机按键映射</div>
+                        <div class="help-item"><span>A 键 / START</span><span>启动编码 (BOOT)</span></div>
+                        <div class="help-item"><span>B 键</span><span>中断编码 (ABORT)</span></div>
+                        <div class="help-item"><span>SELECT</span><span>重置日志系统</span></div>
+                      </div>
+
+                      <div class="canvas-reflection"></div>
+                    </div>
+
+                    <div class="status-panel">
+                      <div class="status-row">
+                        <span class="status-label">当前阶段</span>
+                        <span id="stage" class="status-value">等待输入</span>
+                      </div>
+                      <div class="status-row">
+                        <span class="status-label">转码进度</span>
+                        <span id="progress-percent" class="status-value">0%</span>
+                      </div>
+                      <div class="progress-container">
+                        <progress id="progress" max="1" value="0"></progress>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- GBA Front Controls -->
+              <div class="controls-panel">
+                <!-- D-Pad -->
+                <div class="dpad-container">
+                  <div class="dpad">
+                    <div class="dpad-btn up" data-key="up"></div>
+                    <div class="dpad-btn right" data-key="right"></div>
+                    <div class="dpad-btn down" data-key="down"></div>
+                    <div class="dpad-btn left" data-key="left"></div>
+                    <div class="dpad-center"></div>
+                  </div>
+                </div>
+
+                <!-- Speakers -->
+                <div class="speaker-grille">
+                  <span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="action-buttons">
+                  <div class="action-btn-wrapper">
+                    <div class="action-btn btn-b" id="gba-btn-b" title="按 B 键：中断编码 (ABORT)">B</div>
+                  </div>
+                  <div class="action-btn-wrapper">
+                    <div class="action-btn btn-a" id="gba-btn-a" title="按 A 键：启动编码 (BOOT)">A</div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Bottom Controls -->
+              <div class="bottom-controls">
+                <div class="menu-btn select-btn" id="gba-btn-select" title="按 SELECT 键：重置日志">
+                  <div class="pill-btn"></div>
+                  <span>SELECT</span>
+                </div>
+                <div class="menu-btn start-btn" id="gba-btn-start" title="按 START 键：启动编码">
+                  <div class="pill-btn"></div>
+                  <span>START</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quantization Workers Live Progress Sidebar Panel -->
+          <div class="deck-card workers-status-card" id="workers-status-card" style="display: none;">
+            <h3>量化线程状态 (WORKERS)</h3>
+            <div id="worker-progress" class="workers-status-grid"></div>
+          </div>
+
+          <!-- Developer Diagnostic Logs -->
+          <div class="deck-card logs-card" id="logs-panel-card">
+            <div class="logs-header" id="logs-toggle">
+              <h3>转码诊断日志 (LOG)</h3>
+              <span class="logs-toggle-arrow">▲</span>
+            </div>
+            <div class="logs-body">
+              <pre id="log"></pre>
+            </div>
+          </div>
+        </section>
+
+        <!-- RIGHT: Settings and Operations Panel -->
+        <section class="control-deck">
+          <!-- Video Source Metadata Info Panel -->
+          <div class="deck-card metadata-card">
+            <h2>视频源文件信息</h2>
+            <div class="source-metadata-box" id="source-metadata-box">
+              <div id="source-meta-info" class="meta-content">
+                <div class="no-video-prompt">
+                  <p>暂无导入的视频文件</p>
+                  <button type="button" class="btn-import-right" id="btn-import-right">🔍 选择视频文件...</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- GBA Preview Frame Configuration Card -->
+          <div class="deck-card preview-settings-card">
+            <h2>GBA 视频预览图设置</h2>
+
+            <!-- Segmented control mode selector -->
+            <div class="preview-mode-selector">
+              <button type="button" class="btn-mode-tab active" id="tab-mode-video" data-mode="video">📹 截取视频帧</button>
+              <button type="button" class="btn-mode-tab" id="tab-mode-image" data-mode="image">🖼 自定义图片</button>
+            </div>
+
+            <div class="preview-settings-content">
+              <!-- Drag scrubber to seek frame -->
+              <div class="field-group wide" id="container-mode-video">
+                <div class="scrubber-container">
+                  <input id="preview-scrubber" type="range" min="0" max="100" step="0.01" value="0" disabled class="custom-slider" />
+                  <span class="scrubber-time" id="preview-time-display">00:00.00</span>
+                </div>
+                <span class="field-hint">拖拽寻找合适的视频瞬间，画面会实时同步在左侧 GBA 屏幕上</span>
+              </div>
+
+              <!-- Upload custom picture (hidden by default) -->
+              <div class="field-group wide" id="container-mode-image" style="display: none;">
+                <label for="preview-image-file" class="btn-custom-upload">
+                  <span class="upload-icon">📁</span> 选择本地图片文件...
+                </label>
+                <input id="preview-image-file" type="file" accept="image/*" style="display: none;" />
+                <span class="field-hint" id="upload-status-text">自动等比缩放为 80×60 像素，支持 JPG/PNG 格式</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Configuration Fields -->
+          <div class="deck-card settings-card">
+            <h2>转码参数配置</h2>
+
+            <div class="settings-grid">
+              <!-- Hidden title field to satisfy app.js references -->
+              <input id="title" type="hidden" />
+
+              <div class="field-group">
+                <label for="start-time">起始秒数</label>
+                <input id="start-time" type="number" min="0" step="0.001" value="0" />
+              </div>
+
+              <div class="field-group">
+                <label for="duration">截取长度 (秒)</label>
+                <input id="duration" type="number" min="0.1" step="0.001" value="30" />
+              </div>
+
+              <div class="field-group">
+                <label for="fps-preset">帧率预设 (FPS)</label>
+                <div class="select-wrapper">
+                  <select id="fps-preset">
+                    <option value="24000/1001">23.976 (电影/动漫)</option>
+                    <option value="30000/1001">29.970 (标准电视)</option>
+                    <option value="10">10 FPS (省空间)</option>
+                    <option value="12000/1001">11.988 FPS</option>
+                    <option value="12">12 FPS</option>
+                    <option value="15">15 FPS</option>
+                    <option value="20" selected>20 FPS</option>
+                    <option value="custom">自定义 FPS (支持分数)</option>
+                  </select>
+                </div>
+              </div>
+
+              <!-- Custom FPS container, hidden by default unless custom preset is selected -->
+              <div class="field-group" id="fps-custom-group" style="display: none;">
+                <label for="fps-custom">自定义 FPS</label>
+                <input id="fps-custom" type="text" value="24" placeholder="例如: 24, 25/2, 12.5" />
+                <span class="field-hint">支持输入整数、小数或分数（如 25/2）</span>
+              </div>
+
+              <div class="field-group">
+                <label for="audio-rate">音频采样率</label>
+                <div class="select-wrapper">
+                  <select id="audio-rate">
+                    <option value="16384" selected>16384 Hz (推荐，不易卡顿)</option>
+                    <option value="32768">32768 Hz (高负载音频)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="audio-channels">声道配置</label>
+                <div class="select-wrapper">
+                  <select id="audio-channels">
+                    <option value="2">双声道 Stereo</option>
+                    <option value="1" selected>单声道 Mono (推荐，节省带宽)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div class="field-group">
+                <label for="audio-gain">音量调整（百分比）</label>
+                <input id="audio-gain" type="number" min="0" max="400" step="5" value="175" />
+                <span class="field-hint">百分比。默认 175%，在转成 GBA PCM8 之前放大并限幅。</span>
+              </div>
+
+              <div class="field-group wide">
+                <label for="output-mode">输出方式</label>
+                <div class="select-wrapper">
+                  <select id="output-mode">
+                    <option value="blob" selected>浏览器下载（短片/兼容模式）</option>
+                    <option value="file">直接写入文件（长视频推荐）</option>
+                  </select>
+                </div>
+                <span class="field-hint">直接写入文件会先弹出保存位置，编码过程中逐段写出，避免长视频占满浏览器内存。</span>
+              </div>
+
+              <div class="field-group wide">
+                <label for="workers" class="workers-label">
+                  <span>并行 Worker 线程数量</span>
+                  <span class="workers-val-badge" id="workers-count-badge">4</span>
+                </label>
+                <div class="slider-wrapper">
+                  <input id="workers" type="range" min="1" max="32" value="4" class="custom-slider" />
+                </div>
+                <span class="field-hint">并发量化线程。核心数多的设备可以开大，但请保留系统余量。</span>
+              </div>
+            </div>
+
+            <!-- Notes/Warnings -->
+            <div class="warning-banner">
+              <span class="warning-icon">⚠</span>
+              <p>高动态视频超过 20 FPS 或音频质量开过高时可能在 GBA 硬件上造成掉帧或卡顿；默认单声道和 16384Hz 能保证最高的流畅度与声音一致性。</p>
+            </div>
+          </div>
+
+          <!-- Main Actions -->
+          <div class="deck-card action-card">
+            <div class="actions-row">
+              <button id="encode" type="button" class="btn-main-encode" disabled title="正在加载 WASM 编译内核，请稍候...">
+                <span class="btn-icon">⚡</span> 启动编码 (BOOT)
+              </button>
+              <button id="cancel" type="button" class="btn-main-cancel" disabled>
+                <span class="btn-icon">⏹</span> 中断编码
+              </button>
+            </div>
+
+            <div class="download-container">
+              <a id="download" class="btn-download-auv" hidden>
+                <span class="dl-icon">💾</span> 下载 AUV 视频文件
+              </a>
+            </div>
+          </div>
+
+          <div class="deck-card release-card">
+            <h2>播放器下载</h2>
+            <p class="release-intro">把编码得到的 .auv 视频文件放到 SD 卡中，再使用对应版本的 GBA 播放器打开即可。</p>
+            <div class="player-download-buttons">
+              <a class="btn-player-download superchis-color" href="./downloads/auv-player-v0.1.0-superchis.gba" download>SuperChis</a>
+              <a class="btn-player-download ezode-color" href="./downloads/auv-player-v0.1.0-ezode.gba" download>EZODE</a>
+              <a class="btn-player-download scsd-color" href="./downloads/auv-player-v0.1.0-scsd.gba" download>SuperCard SD</a>
+            </div>
+            <p class="release-hint">⚠️ 注：不同烧录卡的 SD 卡读写接口不同，必须使用对应版本以避免卡顿或无法读取视频。</p>
+          </div>
+
+          <div class="deck-card release-card">
+            <h2>版本信息</h2>
+            <div class="site-link-grid">
+              <a href="https://gbauv.ausar.xyz/" target="_blank" rel="noopener">正式站点：gbauv.ausar.xyz</a>
+              <a href="https://archeychen.github.io/gba-video-auv-web-release/" target="_blank" rel="noopener">备用站点：GitHub Pages</a>
+            </div>
+            <div class="release-meta-grid">
+              <div class="release-meta-item">
+                <span>当前版本</span>
+                <strong>v0.1.0</strong>
+              </div>
+              <div class="release-meta-item">
+                <span>更新记录</span>
+                <strong>第一版发布</strong>
+              </div>
+              <div class="release-meta-item">
+                <span>源码 Hash</span>
+                <code>6fe4eecf8406</code>
+              </div>
+            </div>
+            <div class="changelog-box">
+              <h3>更新日志</h3>
+              <ul>
+                <li><strong>v0.1.0</strong>：首版发布。包含浏览器端并行的 AUV 视频转码器，以及三种已打 DLDI 补丁的 GBA 播放器。</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="deck-card sponsor-card">
+            <h2>支持开发</h2>
+            <div class="sponsor-layout">
+              <p class="sponsor-intro">如果这个项目对您有帮助，请考虑赞助来支持开发工作。</p>
+              <button type="button" class="btn-sponsor" id="btn-sponsor">
+                赞赏支持 (SPONSOR)
+              </button>
+            </div>
+          </div>
+
+          <div class="deck-card release-card">
+            <h2>发布声明与致谢</h2>
+            <ul class="notice-list">
+              <li>本工具由 Ausar 免费提供，供个人学习、研究和非商业使用。禁止将本工具、播放器或其生成流程用于商业用途。</li>
+              <li>转载、镜像或二次分发时，请注明出处并保留作者信息：Ausar / ArcheyChen，以及本页面链接。</li>
+              <li>本工具按“原样”提供，不承诺适配所有浏览器、烧录卡、SD 卡或视频文件；因使用本工具造成的转码失败、数据损坏、设备异常或其他损失，由使用者自行承担风险。</li>
+            </ul>
+            <div class="credits-box">
+              <h3>第三方组件</h3>
+              <ul>
+                <li>播放器中文字显示使用 <a href="https://github.com/TakWolf/fusion-pixel-font" target="_blank" rel="noopener">Fusion Pixel Font</a> 字体资源。</li>
+                <li>网页编码器使用 <a href="https://github.com/Vanilagy/mediabunny" target="_blank" rel="noopener">Mediabunny</a> 处理浏览器端媒体读取、解码与抽帧。</li>
+              </ul>
+              <p>第三方组件按其各自许可证提供；本声明不改变这些组件原有许可证条款。</p>
+            </div>
+          </div>
+        </section>
+      </div>
+    </main>
+
+    <!-- Sponsor Modal Overlay -->
+    <div class="modal-overlay" id="sponsor-modal" hidden>
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3>赞赏支持 (SPONSOR)</h3>
+          <button class="modal-close" id="sponsor-modal-close" type="button">CLOSE</button>
+        </div>
+        <div class="modal-body">
+          <img class="sponsor-qr-img" src="./downloads/sponsor_qr.jpg" alt="微信赞助二维码" />
+          <p>感谢您的慷慨赞助与支持！💖</p>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
